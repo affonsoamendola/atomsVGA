@@ -14,7 +14,7 @@ CCFLAGS =
 all: $(GAMENAME).exe
 
 $(GAMENAME).exe:
-	$(CC) "-I$(INCLUDE) -L$(LIB) -e$(GAMENAME) $(CCFLAGS)"  atoms.c vga.c 
+	$(CC) "-I$(INCLUDE) -L$(LIB) -e$(GAMENAME) $(CCFLAGS)"  *.c 
 	mkdir release
 	mkdir ./release/graphix
 	cp $(GAMENAME).EXE ./release/

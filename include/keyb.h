@@ -1,3 +1,6 @@
+#ifndef KEYB_H
+#define KEYB_H
+
 //MAKE CODES
 
 #define MAKE_ESC				1
@@ -204,3 +207,5 @@
 
 #define KEY_DOWN				1
 #define KEY_UP 					0
+
+#endif 	//KEYB_H

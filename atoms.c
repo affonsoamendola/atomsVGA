@@ -25,7 +25,8 @@
 #include <conio.h>
 #include <io.h>
 
-#include <VGA.H>
+#include <vga.h>
+#include <keyb.h>
 
 #define DIR_UP 0
 #define DIR_RIGHT 1
@@ -75,6 +76,8 @@ int cursor_pos_x = 0;
 int cursor_pos_y = 0;
 
 int current_difficulty = 0;
+
+char char_buffer[256];
 
 unsigned char far * titlescreen_location = 0xA0004B00L;
 unsigned char far * tilemap_location = 0xA0009600L;
@@ -252,6 +255,24 @@ void check_win()
     }
 }
 
+void init_system()
+{
+    int i = 0;
+
+    Keyboard_Install_Driver();
+    set_graphics_mode(GRAPHICS_MODEX);
+
+    for(i = 0; i < 256; i++)
+    {
+        char_buffer[0] = 0;
+    }
+
+    fill_screen(0);
+    flip_front_page();
+    fill_screen(0);
+    flip_front_page();
+}
+
 void init_game()
 {
     int i, j;
@@ -308,6 +329,9 @@ void init_game()
 void kill_game()
 {
     set_graphics_mode(TEXT_MODE);
+    Keyboard_Restore_Driver();
+
+    free(game_board);
 }
 
 int reverse_direction(int direction)
@@ -511,7 +535,6 @@ void draw_foreground()
 {
 
     int x, y;
-    char buffer [10];
 
     copy_vmem_to_dbuffer(   tilemap_location, 
                             266, 
@@ -523,7 +546,7 @@ void draw_foreground()
                             64);
 
     print_string(282, 220, 10, ":", 0);
-    print_string(290, 220, 10,(char*) itoa(atoms_left, buffer, 10), 0);
+    print_string(290, 220, 10,(char*) itoa(atoms_left, char_buffer, 10), 0);
 
     if(detector_hit)
     {
@@ -928,91 +951,98 @@ int check_collision(int posX, int posY, int direction)
 
 void handle_input()
 {
-    char input;
-
     fired_laser = false;
     detector_hit = false;
 
-    input = getch();
+    if(Get_Any_Key())
+    {    
+        if(Get_Key_Once(MAKE_UP))
+        {
+            if(cursor_pos_x >= -1 && cursor_pos_x <= board_size_X)
+            {
+                if(cursor_pos_y > -1)
+                {
+                    cursor_pos_y -= 1;
+                }
+            }
+        }
 
-    if(input == 'w' || input == 'W')
-    {
-        if(cursor_pos_x >= -1 && cursor_pos_x <= board_size_X)
+        if (Get_Key_Once(MAKE_RIGHT))
         {
-            if(cursor_pos_y > -1)
+            if(cursor_pos_y >= -1 && cursor_pos_y <= board_size_Y)
             {
-                cursor_pos_y -= 1;
+                if(cursor_pos_x < board_size_X)
+                {
+                    cursor_pos_x += 1;
+                }
             }
         }
-    }
-    else if (input == 'd' || input == 'D')
-    {
-        if(cursor_pos_y >= -1 && cursor_pos_y <= board_size_Y)
+        
+        if(Get_Key_Once(MAKE_DOWN))
         {
-            if(cursor_pos_x < board_size_X)
+            if(cursor_pos_x >= -1 && cursor_pos_x <= board_size_X)
             {
-                cursor_pos_x += 1;
+                if(cursor_pos_y < board_size_Y)
+                {
+                    cursor_pos_y += 1;
+                }
             }
         }
-    }
-    else if(input == 's' || input == 'S')
-    {
-        if(cursor_pos_x >= -1 && cursor_pos_x <= board_size_X)
+
+        if (Get_Key_Once(MAKE_LEFT))
         {
-            if(cursor_pos_y < board_size_Y)
+            if(cursor_pos_y >= -1 && cursor_pos_y <= board_size_Y)
             {
-                cursor_pos_y += 1;
+                if(cursor_pos_x > -1)
+                {
+                    cursor_pos_x -= 1;
+                }
             }
         }
-    }
-    else if (input == 'a' || input == 'A')
-    {
-        if(cursor_pos_y >= -1 && cursor_pos_y <= board_size_Y)
+
+        if(Get_Key(MAKE_SPACE) || Get_Key(MAKE_ENTER))
         {
-            if(cursor_pos_x > -1)
+            if(cursor_pos_y == -1 && cursor_pos_x >= 0 && cursor_pos_x <= board_size_X-1)
             {
-                cursor_pos_x -= 1;
+                shoot_laser(cursor_pos_x, cursor_pos_y, DIR_DOWN);
+            }
+            else if(cursor_pos_x == board_size_X && cursor_pos_y >= 0 && cursor_pos_y <= board_size_Y-1)
+            {
+                shoot_laser(cursor_pos_x, cursor_pos_y, DIR_LEFT);
+            }
+            else if(cursor_pos_y == board_size_Y && cursor_pos_x >= 0 && cursor_pos_x <= board_size_X-1)
+            {
+                shoot_laser(cursor_pos_x, cursor_pos_y, DIR_UP);
+            }
+            else if(cursor_pos_x == -1 && cursor_pos_y >= 0 && cursor_pos_y <= board_size_Y-1)
+            {
+                shoot_laser(cursor_pos_x, cursor_pos_y, DIR_RIGHT);
             }
         }
-    }
-    else if(input == 'j' || input == 'J')
-    {
-        if(cursor_pos_y == -1 && cursor_pos_x >= 0 && cursor_pos_x <= board_size_X-1)
+
+        if(Get_Key_Once(MAKE_SPACE) || Get_Key_Once(MAKE_ENTER))
         {
-            shoot_laser(cursor_pos_x, cursor_pos_y, DIR_DOWN);
-        }
-        else if(cursor_pos_x == board_size_X && cursor_pos_y >= 0 && cursor_pos_y <= board_size_Y-1)
-        {
-            shoot_laser(cursor_pos_x, cursor_pos_y, DIR_LEFT);
-        }
-        else if(cursor_pos_y == board_size_Y && cursor_pos_x >= 0 && cursor_pos_x <= board_size_X-1)
-        {
-            shoot_laser(cursor_pos_x, cursor_pos_y, DIR_UP);
-        }
-        else if(cursor_pos_x == -1 && cursor_pos_y >= 0 && cursor_pos_y <= board_size_Y-1)
-        {
-            shoot_laser(cursor_pos_x, cursor_pos_y, DIR_RIGHT);
-        }
-        else if(cursor_pos_x >= 0 && cursor_pos_x <= board_size_X-1 &&
+            if( cursor_pos_x >= 0 && cursor_pos_x <= board_size_X-1 &&
                 cursor_pos_y >= 0 && cursor_pos_y <= board_size_Y-1)
-        {
-            if(!has_question(cursor_pos_x, cursor_pos_y) && !has_flag(cursor_pos_x, cursor_pos_y))
             {
-                toggle_question(cursor_pos_x, cursor_pos_y);
-            }
-            else if(has_question(cursor_pos_x, cursor_pos_y) && atoms_left > 0)
-            {
-                atoms_left -= 1;
-                toggle_flag(cursor_pos_x, cursor_pos_y);
-            }
-            else if(has_flag(cursor_pos_x, cursor_pos_y))
-            {
-                atoms_left += 1; 
-                toggle_flag(cursor_pos_x, cursor_pos_y);
-            }
-            else if(has_question(cursor_pos_x, cursor_pos_y))
-            {
-                toggle_question(cursor_pos_x, cursor_pos_y);
+                if(!has_question(cursor_pos_x, cursor_pos_y) && !has_flag(cursor_pos_x, cursor_pos_y))
+                {
+                    toggle_question(cursor_pos_x, cursor_pos_y);
+                }
+                else if(has_question(cursor_pos_x, cursor_pos_y) && atoms_left > 0)
+                {
+                    atoms_left -= 1;
+                    toggle_flag(cursor_pos_x, cursor_pos_y);
+                }
+                else if(has_flag(cursor_pos_x, cursor_pos_y))
+                {
+                    atoms_left += 1; 
+                    toggle_flag(cursor_pos_x, cursor_pos_y);
+                }
+                else if(has_question(cursor_pos_x, cursor_pos_y))
+                {
+                    toggle_question(cursor_pos_x, cursor_pos_y);
+                }
             }
         }
     }
@@ -1027,40 +1057,86 @@ void game_loop()
     check_win();
 }
 
-void splash_screen()
+void print_int(int x, int y, int color, int integer, int transparent)
 {
-    load_pgm("graphix/ttloff.pgm", titlescreen_location, 320, 240);
-    load_pallette("graphix/ttloff.plt", 5);
-
-    flip_front_page();
-    delay(2000);
-
-    load_pgm("graphix/ttlon.pgm", titlescreen_location, 320, 240);
-    load_pallette("graphix/ttlon.plt", 11);
-
-    flip_front_page();
-    delay(1500);
-
-    load_pgm("graphix/ttlon2.pgm", titlescreen_location, 320, 240);
-    load_pallette("graphix/ttlon2.plt", 14);
-
-    flip_front_page();
-    delay(10);
-
-    load_pgm("graphix/ttlon.pgm", titlescreen_location, 320, 240);
-    load_pallette("graphix/ttlon.plt", 11);
-
-    flip_front_page();
-
-    delay(1500);
-
-    fill_screen(0);
-    flip_front_page();
+    print_string(x, y, 60, (char *)itoa(integer, char_buffer, 10), transparent);
 }
 
 void print_string_centralized(int y, int color, char *string, int strlen, int transparent)
 {
     print_string(SCREEN_RES_X/2-strlen*4, y, color, string, transparent);
+}
+
+#define frame_0 2000
+#define frame_1 (frame_0 + 1500)
+#define frame_2 (frame_1 + 75)
+#define frame_3 (frame_2 + 1500)
+
+void splash_screen()
+{
+    int anim_playing = 1;
+
+    int anim_counter = 0;
+
+    int frame_show = -1;
+
+    clock_t clock_start = clock();
+
+    while(anim_playing)
+    {
+        anim_counter = (clock()-clock_start)/(CLOCKS_PER_SEC/1000);
+
+        if(anim_counter < frame_0)
+        {
+            if(frame_show < 0)
+            {
+                frame_show += 1;
+                load_pgm("graphix/ttloff.pgm", titlescreen_location, 320, 240);
+                load_pallette("graphix/ttloff.plt", 5);
+            }
+        }
+        else if(anim_counter < frame_1) 
+        {
+            if(frame_show < 1)
+            {
+                frame_show +=1;
+                load_pgm("graphix/ttlon.pgm", titlescreen_location, 320, 240);
+                load_pallette("graphix/ttlon.plt", 11);
+            }
+        }
+        else if(anim_counter < frame_2)
+        {
+            if(frame_show < 2)
+            {
+                frame_show += 1;
+                load_pgm("graphix/ttlon2.pgm", titlescreen_location, 320, 240);
+                load_pallette("graphix/ttlon2.plt", 14);
+            }
+        }
+        else if(anim_counter < frame_3)
+        {
+            if(frame_show < 3)
+            {
+                frame_show += 1;
+                load_pgm("graphix/ttlon.pgm", titlescreen_location, 320, 240);
+                load_pallette("graphix/ttlon.plt", 11);
+            }
+        }
+        else
+        {
+            anim_playing = 0;
+        }
+
+        flip_front_page();
+
+        if(Get_Any_Key())
+        {
+            anim_playing = 0;
+        }
+    }
+
+    fill_screen(0);
+    flip_front_page();
 }
 
 void credits()
@@ -1094,7 +1170,7 @@ void credits()
 
     flip_front_page();
 
-    getch();
+    Sleep_Key();
 
     fill_screen(0);
     flip_front_page();
@@ -1188,10 +1264,8 @@ void main_menu()
         print_string_centralized(230, 40, "By Affonso Amendola, 2019", 24, 0);
 
         flip_front_page();
-        
-        input = getch();
 
-        if(input == 'j' || input == 'J')
+        if(Get_Key_Once(MAKE_SPACE) || Get_Key_Once(MAKE_ENTER))
         {
             if(cursor_position == 0)
             {
@@ -1218,7 +1292,7 @@ void main_menu()
                 break;
             }
         }
-        else if(input == 'w' || input == 'W')
+        else if(Get_Key_Once(MAKE_UP))
         {
             if(cursor_position - 1 < 0)
             {
@@ -1229,7 +1303,7 @@ void main_menu()
                 cursor_position -= 1;
             }
         }
-        else if(input == 's' || input == 'S')
+        else if(Get_Key_Once(MAKE_DOWN))
         {
             if(cursor_position + 1 > 4)
             {
@@ -1276,7 +1350,7 @@ void print_order_info()
 
 int main()
 {
-    set_graphics_mode(GRAPHICS_MODEX);
+    init_system();
     
     splash_screen();
 
