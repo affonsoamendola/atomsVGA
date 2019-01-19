@@ -1,0 +1,19 @@
+Turbo C++ Version 3.00 Copyright (c) 1992 Borland International
+atoms.c:
+Warning atoms.c 79: Nonportable pointer conversion
+Warning atoms.c 80: Nonportable pointer conversion
+Warning atoms.c 213: Nonportable pointer conversion in function victory_screen
+Warning atoms.c 214: Nonportable pointer conversion in function victory_screen
+Warning atoms.c 287: Nonportable pointer conversion in function init_game
+vga.c:
+Warning vga.c 25: Nonportable pointer conversion
+Warning vga.c 26: Nonportable pointer conversion
+Warning vga.c 28: Nonportable pointer conversion
+Warning vga.c 565: 'endSequence' is assigned a value that is never used in function draw_line_h
+Warning vga.c 565: 'startSequence' is assigned a value that is never used in function draw_line_h
+Warning vga.c 842: Parameter 'line_color' is never used in function draw_message_box
+Warning vga.c 1013: 'current_pixel' is assigned a value that is never used in function copy_vmem_to_location_latched
+Warning vga.c 1046: 'current_pixel' is assigned a value that is never used in function draw_vmem_to_dbuffer_latched
+Turbo Link  Version 5.0 Copyright (c) 1992 Borland International
+
+	Available memory 4019524

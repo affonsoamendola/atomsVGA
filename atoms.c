@@ -262,7 +262,7 @@ void init_game()
     {
         board_size_X = 7;
         board_size_Y = 7;
-        atom_number = 1;
+        atom_number = 5;
     }
     else if(current_difficulty == 1)
     {
@@ -1095,6 +1095,9 @@ void credits()
     flip_front_page();
 
     getch();
+
+    fill_screen(0);
+    flip_front_page();
 
     load_pallette("graphix/menu.plt", 10);
     load_pgm("graphix/menu.pgm", tilemap_location, 320, 240);

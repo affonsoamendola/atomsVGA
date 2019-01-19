@@ -3,7 +3,7 @@
 #	Fofonso's Atoms VGA								#
 #---------------------------------------------------#
 
-GAMENAME = atomsvga
+GAMENAME = ATOMSVGA
 CC = tcc
 RM = rm -f
 
@@ -14,10 +14,18 @@ CCFLAGS =
 all: $(GAMENAME).exe
 
 $(GAMENAME).exe:
-	$(CC) "-I$(INCLUDE) -L$(LIB) -e$(GAMENAME) $(CCFLAGS)"  *.c 
-
+	$(CC) "-I$(INCLUDE) -L$(LIB) -e$(GAMENAME) $(CCFLAGS)"  atoms.c vga.c 
+	mkdir release
+	mkdir ./release/graphix
+	cp $(GAMENAME).EXE ./release/
+	cp -r ./graphix ./release
+	
 run:
 	dosbox -conf ~/.dosbox/tcc.conf -c "$(GAMENAME)"
 
 clean:
 	$(RM) *.OBJ *.EXE *.LOG *.BAT
+
+cleanall:
+	$(RM) *.OBJ *.EXE *.LOG *.BAT
+	$(RM) -r release
