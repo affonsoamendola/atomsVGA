@@ -9,63 +9,62 @@
 
 int keys_active = 0;
 int keyboard_state[128];
-int keyboard_processed[128];
+int key_disabled[128];
+
+int keyboard_disabled = 0;
+
+void Keyboard_Disable_Till_Up_Event()
+{
+	keyboard_disabled = 1;
+}
 
 void Sleep_Key()
 {
-	int hit = 0;
-	int current_keys_active = keys_active;
-	while(hit == 0)
+	while(!Get_Any_Key())
 	{
-		if(keys_active <= current_keys_active)
-		{
-			current_keys_active = keys_active;
-		}
-		else
-		{
-			hit = 1;
-		}
 	}
 }
 
 void Delay_Key(int msecs)
 {
-	int hit = 0;
-	int current_keys_active = keys_active;
-
 	clock_t time = clock();
 	int time_elapsed = 0;
 
-	while(hit == 0 && time_elapsed < msecs*CLOCKS_PER_SEC/1000)
+	while(!Get_Any_Key() && time_elapsed < msecs*CLOCKS_PER_SEC/1000)
 	{
 		time_elapsed = clock()-time;
-			
-		if(keys_active <= current_keys_active)
-		{
-			current_keys_active = keys_active;
-		}
-		else
-		{
-			hit = 1;
-		}
 	}
 }
 
 int Get_Any_Key()
 {
-	return keys_active;
+	if(!keyboard_disabled)
+	{
+		return keys_active;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 int Get_Key(int make_code)
 {
-	return keyboard_state[make_code];
+	if(!keyboard_disabled)
+	{
+		return keyboard_state[make_code];
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 int Get_Key_Once(int make_code)
 {
-	if(keyboard_state[make_code] == KEY_DOWN && keyboard_processed[make_code] == 0)
+	if(keyboard_state[make_code] == KEY_DOWN && !key_disabled[make_code] && !keyboard_disabled)
 	{
-		keyboard_processed[make_code] = 1;
+		key_disabled[make_code] = 1;
 		return 1;
 	}
 	else
@@ -111,7 +110,8 @@ void interrupt far Keyboard_Driver()
 		{
 			keys_active--;	
 			keyboard_state[raw_scan_code] = KEY_UP;
-			keyboard_processed[raw_scan_code] = 0;
+			keyboard_disabled = 0;
+			key_disabled[raw_scan_code] = 0;
 		}
 	}
 }
@@ -124,10 +124,8 @@ void Keyboard_Install_Driver()
 	for (i = 0; i<128; i++)
 	{
 		keyboard_state[i] = 0;
-		keyboard_processed[i] = 0;
+		key_disabled[i] = 0;
 	}
-
-
 
 	Old_Keyboard_ISR = _dos_getvect(KEYBOARD_INTERRUPT);
 

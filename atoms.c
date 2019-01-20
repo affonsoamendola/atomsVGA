@@ -42,6 +42,59 @@
 #define TILE_LASER_ON 9
 #define TILE_LASER_REC 10
 
+#define COLOR_BLACK             0
+#define COLOR_DARK_BLUE         1
+#define COLOR_DARK_GREEN        2
+#define COLOR_DARK_CYAN         3
+#define COLOR_DARK_RED          4
+#define COLOR_DARK_PURPLE       5
+#define COLOR_DARK_YELLOW       6
+#define COLOR_LIGHT_GRAY        7
+#define COLOR_DARK_GRAY         8
+#define COLOR_LIGHT_BLUE        9
+#define COLOR_LIGHT_GREEN       10
+#define COLOR_LIGHT_CYAN        11
+#define COLOR_LIGHT_RED         12
+#define COLOR_LIGHT_PURPLE      13
+#define COLOR_LIGHT_YELLOW      14
+#define COLOR_WHITE             15
+
+#define COLOR_GRAY_0            16
+#define COLOR_GRAY_1            17
+#define COLOR_GRAY_2            18
+#define COLOR_GRAY_3            19
+#define COLOR_GRAY_4            20
+#define COLOR_GRAY_5            21
+#define COLOR_GRAY_6            22
+#define COLOR_GRAY_7            23
+#define COLOR_GRAY_8            24
+#define COLOR_GRAY_9            25
+#define COLOR_GRAY_10           26
+#define COLOR_GRAY_11           27
+#define COLOR_GRAY_12           28
+#define COLOR_GRAY_13           29
+#define COLOR_GRAY_14           30
+#define COLOR_GRAY_15           31
+
+#define COLOR_BLUE              32
+#define COLOR_BLUE_1            33
+#define COLOR_PURPLE_1          34
+#define COLOR_PURPLE            35
+#define COLOR_PINK              36
+#define COLOR_PINK_1            37
+#define COLOR_PINK_2            38
+#define COLOR_RED_1             39
+#define COLOR_RED               40
+#define COLOR_ORANGE_1          41
+#define COLOR_ORANGE            42
+#define COLOR_YELLOW_1          43
+#define COLOR_YELLOW            44
+#define COLOR_LIME              45
+#define COLOR_GREEN_1           46
+#define COLOR_GREEN             47
+
+#define COLOR_TEXT              COLOR_GRAY_13
+
 typedef int bool;
 
 bool game_running = 1;
@@ -88,6 +141,16 @@ unsigned char far * tilemap_location = 0xA0009600L;
 #define HAS_ATOM        1
 #define HAS_FLAG        2
 #define HAS_QUESTION    4
+
+void print_int(int x, int y, int color, int integer, int transparent)
+{
+    print_string(x, y, 60, (char *)itoa(integer, char_buffer, 10), transparent);
+}
+
+void print_string_centralized(int y, int color, char *string, int strlen, int transparent)
+{
+    print_string(SCREEN_RES_X/2-strlen*4, y, color, string, transparent);
+}
 
 void toggle_atom(int posX, int posY)
 {
@@ -172,107 +235,6 @@ void populate_board(int atomNumber)
     }
 }
 
-void draw_tile(int posX, int posY, int tileX, int tileY)
-{
-    copy_vmem_to_dbuffer(   
-                            tilemap_location, 
-                            board_pos_x + posX*16, board_pos_y + posY*16,
-                            16*tileX, (16*(tileX+1)-1),
-                            16*tileY, (16*(tileY+1)-1),
-                            64
-                        );
-}
-
-void victory_screen()
-{
-    unsigned char* color_pallette;
-    unsigned char* color_temp;
-
-    int x, y;
-
-    fill_screen(0);
-
-    flip_front_page();
-
-    load_pallette("graphix/rainbow.plt", 256);
-
-    for(x=0;x<320;x++)
-    {
-        for(y=0;y<240;y++)
-        {
-            set_pixel(x,y,(int)( ((float)(y)*(float)(x)) * (255.0 / (320.0*240.0) )  ));
-        }
-    }
-
-    fill_rectangle(0,320,92,136,150);
-
-    print_string(10,96,30,"GAME OVER",1);
-    print_string(10,106,30,"THANK YOU FOR PLAYING",1);
-
-    print_string(10,126,30,"PRESS ANY KEY TO RETURN TO DOS",1);
-
-    flip_front_page();
-
-    color_pallette = malloc(255*3);
-    color_temp = malloc(1*3);
-
-    while(!kbhit())
-    {
-
-        delay(50);  
-        
-        get_pallette(color_pallette,1,255); 
-        get_pallette(color_temp,0,0);
-        set_pallette(color_pallette,0,254);
-        set_pallette(color_temp,255,255);
-        
-    }
-
-    free(color_pallette);
-    free(color_temp);
-}
-
-void check_win()
-{
-    bool win = true;
-    int i, j;
-
-    for (i = 0; i < board_size_X; i++)
-    {
-        for (j = 0; j < board_size_Y; j++)
-        {
-            if(has_atom(i, j) && !has_flag(i, j))
-            {
-                win = false;
-            }
-        }
-    }
-
-    if(win == true)
-    {
-        victory_screen();
-        game_running = false;
-    }
-}
-
-void init_system()
-{
-    int i = 0;
-
-    Keyboard_Install_Driver();
-    set_graphics_mode(GRAPHICS_MODEX);
-
-    for(i = 0; i < 256; i++)
-    {
-        char_buffer[0] = 0;
-    }
-
-    fill_screen(0);
-    flip_front_page();
-    fill_screen(0);
-    flip_front_page();
-}
-
 void init_game()
 {
     int i, j;
@@ -324,6 +286,214 @@ void init_game()
     load_pallette("graphix/TileMap.plt", 40);
 
     populate_board(atom_number);
+}
+
+void draw_tile(int posX, int posY, int tileX, int tileY)
+{
+    copy_vmem_to_dbuffer(   
+                            tilemap_location, 
+                            board_pos_x + posX*16, board_pos_y + posY*16,
+                            16*tileX, (16*(tileX+1)-1),
+                            16*tileY, (16*(tileY+1)-1),
+                            64
+                        );
+}
+
+void victory_screen()
+{
+    int selected = 0;
+    int choosing = 1;
+
+    while(choosing)
+    {
+        fill_rectangle(SCREEN_RES_X/2-124, SCREEN_RES_X/2+124, SCREEN_RES_Y/2-24, SCREEN_RES_Y/2+32, COLOR_PURPLE);
+        fill_rectangle(SCREEN_RES_X/2-120, SCREEN_RES_X/2+120, SCREEN_RES_Y/2-20, SCREEN_RES_Y/2+28, COLOR_BLACK);
+        print_string_centralized(SCREEN_RES_Y/2-15, COLOR_GREEN_1, "CONGRATULATIONS, YOU WIN!", 25, 0);
+        print_string_centralized(SCREEN_RES_Y/2-5,  COLOR_TEXT, "Do you want to play again?", 26, 0);
+        
+        if(selected == 0)
+        {
+            print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_RED, "HELL YES!", 9, 0);   
+        }
+        else
+        {
+            print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_TEXT, "Yes.", 4, 0);
+        }
+
+        if(selected == 1)
+        {
+            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_RED, "I got better things to do.", 26, 0);   
+        }
+        else
+        {
+            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_TEXT, "No.", 3, 0);  
+        }
+
+        flip_front_page();
+
+        if(Get_Key_Once(MAKE_UP))
+        {
+            if(selected - 1 < 0)
+            {
+                selected = 1;
+            }
+            else
+            {
+                selected -= 1;
+            }
+        }
+
+        if(Get_Key_Once(MAKE_DOWN))
+        {
+            if(selected + 1 > 1)
+            {
+                selected = 0;
+            }
+            else
+            {
+                selected += 1;
+            }
+        }
+
+        if(Get_Key_Once(MAKE_ENTER) || Get_Key_Once(MAKE_SPACE))
+        {
+            if(selected == 0)
+            {
+                init_game();
+            }
+            else if(selected == 1)
+            {
+                game_running = false;
+            }
+            choosing = false;
+        }
+    }
+}
+
+void show_quit()
+{
+    int selected = 0;
+    int choosing = 1;
+
+    while(choosing)
+    {
+        fill_rectangle(SCREEN_RES_X/2-134, SCREEN_RES_X/2+134, SCREEN_RES_Y/2-24, SCREEN_RES_Y/2+32, COLOR_RED);
+        fill_rectangle(SCREEN_RES_X/2-130, SCREEN_RES_X/2+130, SCREEN_RES_Y/2-20, SCREEN_RES_Y/2+28, COLOR_BLACK);
+        print_string_centralized(SCREEN_RES_Y/2-15, COLOR_GREEN_1, "Are you sure you want to leave?", 31, 0);
+
+        if(selected == 0)
+        {
+            print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_RED, "YES, TAKE ME OUT OF HERE!", 25, 0);   
+        }
+        else
+        {
+            print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_TEXT, "Yes.", 4, 0);
+        }
+
+        if(selected == 1)
+        {
+            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_RED, "NAH, I'M HAVING FUN!", 20, 0);   
+        }
+        else
+        {
+            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_TEXT, "No.", 3, 0);  
+        }
+
+        flip_front_page();
+
+        if(Get_Key_Once(MAKE_UP))
+        {
+            if(selected - 1 < 0)
+            {
+                selected = 1;
+            }
+            else
+            {
+                selected -= 1;
+            }
+        }
+
+        if(Get_Key_Once(MAKE_DOWN))
+        {
+            if(selected + 1 > 1)
+            {
+                selected = 0;
+            }
+            else
+            {
+                selected += 1;
+            }
+        }
+
+        if(Get_Key_Once(MAKE_ENTER) || Get_Key_Once(MAKE_SPACE))
+        {
+            if(selected == 0)
+            {
+                game_running = false;
+            }
+            else if(selected == 1)
+            {
+            }
+            choosing = false;
+
+            Keyboard_Disable_Till_Up_Event();
+        }
+    }
+}
+
+void help()
+{
+    fill_screen(0);
+
+    load_pgm("graphix/help.pgm", titlescreen_location, 320, 240);
+    load_pallette("graphix/help.plt", 175);
+
+    flip_front_page();
+    Sleep_Key();
+    Keyboard_Disable_Till_Up_Event();
+
+    load_pgm("graphix/menu.pgm", tilemap_location, 320, 240);
+    load_pallette("graphix/menu.plt", 11);
+}
+
+void check_win()
+{
+    bool win = true;
+    int i, j;
+
+    for (i = 0; i < board_size_X; i++)
+    {
+        for (j = 0; j < board_size_Y; j++)
+        {
+            if(has_atom(i, j) && !has_flag(i, j))
+            {
+                win = false;
+            }
+        }
+    }
+
+    if(win == true)
+    {
+        victory_screen();
+    }
+}
+
+void init_system()
+{
+    int i = 0;
+
+    Keyboard_Install_Driver();
+    set_graphics_mode(GRAPHICS_MODEX);
+
+    for(i = 0; i < 256; i++)
+    {
+        char_buffer[0] = 0;
+    }
+
+    fill_screen(0);
+    flip_front_page();
+    fill_screen(0);
+    flip_front_page();
 }
 
 void kill_game()
@@ -545,8 +715,8 @@ void draw_foreground()
                             15,
                             64);
 
-    print_string(282, 220, 10, ":", 0);
-    print_string(290, 220, 10,(char*) itoa(atoms_left, char_buffer, 10), 0);
+    print_string(282, 220, COLOR_RED, ":", 0);
+    print_string(290, 220, COLOR_RED,(char*) itoa(atoms_left, char_buffer, 10), 0);
 
     if(detector_hit)
     {
@@ -1045,6 +1215,12 @@ void handle_input()
                 }
             }
         }
+
+        if(Get_Key_Once(MAKE_Q) || Get_Key_Once(MAKE_ESC))
+        {
+            Keyboard_Disable_Till_Up_Event();
+            show_quit();
+        }
     }
 }
 
@@ -1055,16 +1231,6 @@ void game_loop()
 
     handle_input();
     check_win();
-}
-
-void print_int(int x, int y, int color, int integer, int transparent)
-{
-    print_string(x, y, 60, (char *)itoa(integer, char_buffer, 10), transparent);
-}
-
-void print_string_centralized(int y, int color, char *string, int strlen, int transparent)
-{
-    print_string(SCREEN_RES_X/2-strlen*4, y, color, string, transparent);
 }
 
 #define frame_0 2000
@@ -1146,8 +1312,8 @@ void credits()
     load_pgm("graphix/handsome.pgm", tilemap_location, 100, 100);
     load_pallette("graphix/handsome.plt", 143);
 
-    print_string_centralized(30, 30, "This fine piece of software was made", 36, 0);
-    print_string_centralized(40, 30, "possible by the following individuals:", 38, 0);
+    print_string_centralized(30, COLOR_TEXT, "This fine piece of software was made", 36, 0);
+    print_string_centralized(40, COLOR_TEXT, "possible by the following individuals:", 38, 0);
 
     copy_vmem_to_dbuffer(   tilemap_location, 
                             SCREEN_RES_X/3-50-26, 
@@ -1158,15 +1324,15 @@ void credits()
                             99,
                             100);
 
-    print_string(SCREEN_RES_X/3-64-26, 175, 10, "Affonso Amendola", 0);
-    print_string(SCREEN_RES_X/3-64-26, 185, 30, " Handsome Devil ", 0);
-    print_string(SCREEN_RES_X/3-64-26, 195, 30, " Programmer/Art ", 0);
+    print_string(SCREEN_RES_X/3-64-26, 175, COLOR_GREEN_1, "Affonso Amendola", 0);
+    print_string(SCREEN_RES_X/3-64-26, 185, COLOR_TEXT, " Handsome Devil ", 0);
+    print_string(SCREEN_RES_X/3-64-26, 195, COLOR_TEXT, " Programmer/Art ", 0);
 
-    print_string(SCREEN_RES_X*2/3-64+26, 175, 10, "Rafael  Flauzino", 0);
-    print_string(SCREEN_RES_X*2/3-64+26, 185, 30, " Bearded Master ", 0);
-    print_string(SCREEN_RES_X*2/3-64+26, 195, 30, "  Sound/ Music  ", 0);
+    print_string(SCREEN_RES_X*2/3-64+26, 175, COLOR_GREEN_1, "Rafael  Flauzino", 0);
+    print_string(SCREEN_RES_X*2/3-64+26, 185, COLOR_TEXT, " Bearded Master ", 0);
+    print_string(SCREEN_RES_X*2/3-64+26, 195, COLOR_TEXT, "  Sound/ Music  ", 0);
 
-    print_string_centralized(230, 40, "Press any key to return to the menu", 35, 0);
+    print_string_centralized(230, COLOR_RED, "Press any key to return to the menu", 35, 0);
 
     flip_front_page();
 
@@ -1175,20 +1341,21 @@ void credits()
     fill_screen(0);
     flip_front_page();
 
-    load_pallette("graphix/menu.plt", 10);
     load_pgm("graphix/menu.pgm", tilemap_location, 320, 240);
+    load_pallette("graphix/menu.plt", 11);
+
+    flip_front_page();
+
+    Keyboard_Disable_Till_Up_Event();
 }
 
 void main_menu()
 {
     int cursor_position = 0;
 
-    int selected_color = 10;
-    int not_selected_color = 30;
-
     char input;
 
-    load_pallette("graphix/menu.plt", 10);
+    load_pallette("graphix/menu.plt", 11);
     load_pgm("graphix/menu.pgm", tilemap_location, 320, 240);
 
     while(game_running)
@@ -1201,67 +1368,67 @@ void main_menu()
 
         if(cursor_position == 0)
         {
-            print_string_centralized(120, selected_color, "NEW GAME", 8, 0);
+            print_string_centralized(120, COLOR_RED, "NEW GAME", 8, 0);
         }
         else
         {
-            print_string_centralized(120, not_selected_color, "NEW GAME", 8, 0);
+            print_string_centralized(120, COLOR_TEXT, "NEW GAME", 8, 0);
         }
 
         if(cursor_position == 1)
         {
-            print_string_centralized(140, selected_color, "DIFFICULTY", 10, 0);
+            print_string_centralized(140, COLOR_RED, "DIFFICULTY", 10, 0);
         }
         else
         {
-            print_string_centralized(140, not_selected_color, "DIFFICULTY", 10, 0);
+            print_string_centralized(140, COLOR_TEXT, "DIFFICULTY", 10, 0);
         }
 
         if (current_difficulty == 0)
         {
-            print_string_centralized(150, not_selected_color, "EASY", 4, 0);
+            print_string_centralized(150, COLOR_LIGHT_GREEN, "EASY", 4, 0);
         }
         else if (current_difficulty == 1)
         {
-            print_string_centralized(150, not_selected_color, "MEDIUM", 6, 0);
+            print_string_centralized(150, COLOR_LIGHT_GREEN, "MEDIUM", 6, 0);
         }   
         else if (current_difficulty == 2)
         {
-            print_string_centralized(150, not_selected_color, "HARD", 4, 0);
+            print_string_centralized(150, COLOR_LIGHT_GREEN, "HARD", 4, 0);
         }
         else if (current_difficulty == 3)
         {
-            print_string_centralized(150, not_selected_color, "IMPOSSIBLE", 10, 0);
+            print_string_centralized(150, COLOR_LIGHT_GREEN, "IMPOSSIBLE", 10, 0);
         }
 
         if(cursor_position == 2)
         {
-            print_string_centralized(170, selected_color, "HOW TO PLAY", 11, 0);
+            print_string_centralized(170, COLOR_RED, "HOW TO PLAY", 11, 0);
         }
         else
         {
-            print_string_centralized(170, not_selected_color, "HOW TO PLAY", 11, 0);
+            print_string_centralized(170, COLOR_TEXT, "HOW TO PLAY", 11, 0);
         }
 
         if(cursor_position == 3)
         {
-            print_string_centralized(180, selected_color, "CREDITS", 7, 0);
+            print_string_centralized(180, COLOR_RED, "CREDITS", 7, 0);
         }
         else
         {
-            print_string_centralized(180, not_selected_color, "CREDITS", 7, 0);
+            print_string_centralized(180, COLOR_TEXT, "CREDITS", 7, 0);
         }
 
         if(cursor_position == 4)
         {
-            print_string_centralized(200, selected_color, "QUIT", 4, 0);
+            print_string_centralized(200, COLOR_RED, "QUIT", 4, 0);
         }
         else
         {
-            print_string_centralized(200, not_selected_color, "QUIT", 4, 0);
+            print_string_centralized(200, COLOR_TEXT, "QUIT", 4, 0);
         }
 
-        print_string_centralized(230, 40, "By Affonso Amendola, 2019", 24, 0);
+        print_string_centralized(230, COLOR_ORANGE, "By Affonso Amendola, 2019", 24, 0);
 
         flip_front_page();
 
@@ -1269,6 +1436,7 @@ void main_menu()
         {
             if(cursor_position == 0)
             {
+                Keyboard_Disable_Till_Up_Event();
                 break;
             }
             else if(cursor_position == 1)
@@ -1282,8 +1450,14 @@ void main_menu()
                     current_difficulty += 1;
                 }
             }
+            else if(cursor_position == 2)
+            {
+                Keyboard_Disable_Till_Up_Event();
+                help();
+            }
             else if(cursor_position == 3)
             {
+                Keyboard_Disable_Till_Up_Event();
                 credits();
             }
             else if(cursor_position == 4)
