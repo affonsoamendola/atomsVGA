@@ -16,6 +16,8 @@
     along with AtomsVGA.  If not, see <https://www.gnu.org/licenses/>
 */
 
+#define VGA
+
 #include <bios.h>
 #include <dos.h>
 #include <memory.h>

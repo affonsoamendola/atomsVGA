@@ -15,10 +15,8 @@ all: $(GAMENAME).exe
 
 $(GAMENAME).exe:
 	$(CC) "-I$(INCLUDE) -L$(LIB) -e$(GAMENAME) $(CCFLAGS)"  *.c 
-	mkdir release
-	mkdir ./release/graphix
 	cp $(GAMENAME).EXE ./release/
-	cp -r ./graphix ./release
+	cp -r ./graphix ./release/
 	
 run:
 	dosbox -conf ~/.dosbox/tcc.conf -c "$(GAMENAME)"
@@ -28,4 +26,5 @@ clean:
 
 cleanall:
 	$(RM) *.OBJ *.EXE *.LOG *.BAT
-	$(RM) -r release
+	$(RM) release/$(GAMENAME).EXE
+	$(RM) -r release/graphix
