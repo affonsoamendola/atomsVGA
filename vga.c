@@ -806,7 +806,7 @@ void print_char(int xc, int yc, char c, int color, int transparent)
 			}
 			offset+=80;
 			work_char++;
-		}
+ 		}
 	}
 }
 

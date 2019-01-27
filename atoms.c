@@ -25,8 +25,14 @@
 #include <conio.h>
 #include <io.h>
 
-#include <vga.h>
-#include <keyb.h>
+#ifdef VGA
+#include "vga.h"
+#endif
+#ifdef EGA
+#include "ega.h"
+#endif
+
+#include "keyb.h"
 
 #define DIR_UP 0
 #define DIR_RIGHT 1
@@ -135,8 +141,12 @@ char char_buffer[256];
 unsigned char far * titlescreen_location = 0xA0004B00L;
 unsigned char far * tilemap_location = 0xA0009600L;
 
+#ifdef VGA
+
 #define SCREEN_RES_X 320
 #define SCREEN_RES_Y 240
+
+#endif
 
 #define HAS_ATOM        1
 #define HAS_FLAG        2
@@ -144,12 +154,24 @@ unsigned char far * tilemap_location = 0xA0009600L;
 
 void print_int(int x, int y, int color, int integer, int transparent)
 {
-    print_string(x, y, 60, (char *)itoa(integer, char_buffer, 10), transparent);
+    #ifdef VGA
+        print_string(x, y, 60, (char *)itoa(integer, char_buffer, 10), transparent);
+    #endif
+
+    #ifdef EGA
+        print_string(x, y, 15, (char *)itoa(integer, char_buffer, 10));
+    #endif
 }
 
 void print_string_centralized(int y, int color, char *string, int strlen, int transparent)
 {
-    print_string(SCREEN_RES_X/2-strlen*4, y, color, string, transparent);
+    #ifdef VGA
+        print_string(SCREEN_RES_X/2-strlen*4, y, color, string, transparent);
+    #endif
+
+    #ifdef EGA
+        print_string(SCREEN_RES_X/2-strlen*4, y, color, string);
+    #endif
 }
 
 void toggle_atom(int posX, int posY)
@@ -282,14 +304,21 @@ void init_game()
     board_pos_x = (SCREEN_RES_X/2)-(board_size_X*board_square_size/2);
     board_pos_y = (SCREEN_RES_Y/2)-(board_size_Y*board_square_size/2);
 
+    #ifdef VGA
     load_pgm("graphix/TileMap.pgm", tilemap_location, 64, 208);
     load_pallette("graphix/TileMap.plt", 40);
+    #endif
+
+    #ifdef EGA
+    load_pgm("graphix/ega/tileset.pgm", tilemap_location, 64, 208);
+    #endif
 
     populate_board(atom_number);
 }
 
 void draw_tile(int posX, int posY, int tileX, int tileY)
 {
+    #ifdef VGA
     copy_vmem_to_dbuffer(   
                             tilemap_location, 
                             board_pos_x + posX*16, board_pos_y + posY*16,
@@ -297,6 +326,13 @@ void draw_tile(int posX, int posY, int tileX, int tileY)
                             16*tileY, (16*(tileY+1)-1),
                             64
                         );
+    #endif 
+    #ifdef EGA
+    transfer_tile_to_display(   tilemap_location,
+                                board_pos_x + posX*16, board_pos_y + posY*16,
+                                16*tileX, 16*tileY, 
+                                16, 16);
+    #endif
 }
 
 void victory_screen()
