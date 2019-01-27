@@ -6,8 +6,9 @@ My version runs natively in MS-DOS 6.22 (Should run fine on earlier versions as 
 
 Written in C and compiled with Borland's Turbo C++, as usual for my DOS projects.
 
-Distributed under GPLv3, check LICENSE and all that good jazz.
+The release folder contains a precompiled executable that runs fine on DOSBox 0.74, I also included a .conf file and a Windows lnk file, If you have no clue how to use DOSBox, just download it and drop the DOSBox.exe, SDL.dll and SDL_net.dll on the same folder as the game and double click on the AtomsVGA shortcut on there, should run just fine.
 
+Distributed under GPLv3, check LICENSE and all that good jazz.
 
 -------------------------------------------------------------------------------------------
 Made by Affonso Amendola,
