@@ -25,13 +25,14 @@
 
 #include <conio.h>
 #include <io.h>
+
 #include "keyb.h"
 
 #ifdef VGA
-#include "vga.h"
+#include "fflibvga.h"
 #endif
 #ifdef EGA
-#include "libega.h"
+#include "fflibega.h"
 #endif
 
 #define DIR_UP 0

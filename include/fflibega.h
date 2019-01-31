@@ -18,7 +18,6 @@
 #define PIC_ICR									0x20
 #define PIC_IMR									0x21
 
-
 #define SEQUENCER_ADDRESS_REGISTER				0x3C4
 #define SEQUENCER_DATA_REGISTER					0x3C5
 
@@ -127,10 +126,15 @@ void load_font(char * file_location, unsigned char far * address);
 void load_pgm(char * file_location, unsigned char far * address);
 
 void transfer_mem_to_display(unsigned char far * origin, int x, int y);
+
 void transfer_tile_to_display(	unsigned char far * origin,
 							 	int x, int y, 
 								int tile_x, int tile_y, 
 								int tile_size_x, int tile_size_y);
+
+void transfer_mem_to_dest(	unsigned char far * origin, unsigned char far * destination, 
+							int skip_bytes, int bytes);
+
 
 void draw_char(int xc, int yc, char color, char c);
 void draw_string(int x, int y, char color, char * string);
