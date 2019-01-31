@@ -1771,15 +1771,7 @@ void print_order_info()
 
 int main()
 {
-	set_ega_mode(EGA_GRAPHICS_MODE);
-	install_vblank_handler();
-
-	while(!kbhit())
-	{
-		printf("%d\n", get_res_x());
-	}
-
-	/*init_system();
+	init_system();
 
 	splash_screen();
     
@@ -1794,5 +1786,5 @@ int main()
 	
 	kill_game();
     print_order_info();
-    return 0;*/
+    return 0;
 }

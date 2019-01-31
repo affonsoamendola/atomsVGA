@@ -11,7 +11,6 @@ INCLUDE = include;D:\tc\include
 LIB = D:\tc\lib;lib
 CCFLAGS = 
 
-all: ega
 all: vga
 	
 ega:
