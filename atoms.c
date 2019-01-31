@@ -15,26 +15,24 @@
     You should have received a copy of the GNU General Public License
     along with AtomsVGA.  If not, see <https://www.gnu.org/licenses/>
 */
-
-#define VGA
-
 #include <bios.h>
 #include <dos.h>
 #include <memory.h>
 #include <math.h>
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <conio.h>
 #include <io.h>
+#include "keyb.h"
 
 #ifdef VGA
 #include "vga.h"
 #endif
 #ifdef EGA
-#include "ega.h"
+#include "libega.h"
 #endif
-
-#include "keyb.h"
 
 #define DIR_UP 0
 #define DIR_RIGHT 1
@@ -50,58 +48,12 @@
 #define TILE_LASER_ON 9
 #define TILE_LASER_REC 10
 
-#define COLOR_BLACK             0
-#define COLOR_DARK_BLUE         1
-#define COLOR_DARK_GREEN        2
-#define COLOR_DARK_CYAN         3
-#define COLOR_DARK_RED          4
-#define COLOR_DARK_PURPLE       5
-#define COLOR_DARK_YELLOW       6
-#define COLOR_LIGHT_GRAY        7
-#define COLOR_DARK_GRAY         8
-#define COLOR_LIGHT_BLUE        9
-#define COLOR_LIGHT_GREEN       10
-#define COLOR_LIGHT_CYAN        11
-#define COLOR_LIGHT_RED         12
-#define COLOR_LIGHT_PURPLE      13
-#define COLOR_LIGHT_YELLOW      14
-#define COLOR_WHITE             15
-
-#define COLOR_GRAY_0            16
-#define COLOR_GRAY_1            17
-#define COLOR_GRAY_2            18
-#define COLOR_GRAY_3            19
-#define COLOR_GRAY_4            20
-#define COLOR_GRAY_5            21
-#define COLOR_GRAY_6            22
-#define COLOR_GRAY_7            23
-#define COLOR_GRAY_8            24
-#define COLOR_GRAY_9            25
-#define COLOR_GRAY_10           26
-#define COLOR_GRAY_11           27
-#define COLOR_GRAY_12           28
-#define COLOR_GRAY_13           29
-#define COLOR_GRAY_14           30
-#define COLOR_GRAY_15           31
-
-#define COLOR_BLUE              32
-#define COLOR_BLUE_1            33
-#define COLOR_PURPLE_1          34
-#define COLOR_PURPLE            35
-#define COLOR_PINK              36
-#define COLOR_PINK_1            37
-#define COLOR_PINK_2            38
-#define COLOR_RED_1             39
-#define COLOR_RED               40
-#define COLOR_ORANGE_1          41
-#define COLOR_ORANGE            42
-#define COLOR_YELLOW_1          43
-#define COLOR_YELLOW            44
-#define COLOR_LIME              45
-#define COLOR_GREEN_1           46
-#define COLOR_GREEN             47
-
+#ifdef VGA
 #define COLOR_TEXT              COLOR_GRAY_13
+#endif
+#ifdef EGA
+#define COLOR_TEXT				COLOR_LIGHT_GRAY
+#endif
 
 typedef int bool;
 
@@ -140,41 +92,20 @@ int current_difficulty = 0;
 
 char char_buffer[256];
 
-unsigned char far * titlescreen_location = 0xA0004B00L;
-unsigned char far * tilemap_location = 0xA0009600L;
+#ifdef EGA
+unsigned char far * font_location = 0xA000D000;
+#endif
 
 #ifdef VGA
-
+unsigned char far * titlescreen_location = 0xA0004B00;
+unsigned char far * tilemap_location = 0xA0009600;
 #define SCREEN_RES_X 320
 #define SCREEN_RES_Y 240
-
 #endif
 
 #define HAS_ATOM        1
 #define HAS_FLAG        2
 #define HAS_QUESTION    4
-
-void print_int(int x, int y, int color, int integer, int transparent)
-{
-    #ifdef VGA
-        print_string(x, y, 60, (char *)itoa(integer, char_buffer, 10), transparent);
-    #endif
-
-    #ifdef EGA
-        print_string(x, y, 15, (char *)itoa(integer, char_buffer, 10));
-    #endif
-}
-
-void print_string_centralized(int y, int color, char *string, int strlen, int transparent)
-{
-    #ifdef VGA
-        print_string(SCREEN_RES_X/2-strlen*4, y, color, string, transparent);
-    #endif
-
-    #ifdef EGA
-        print_string(SCREEN_RES_X/2-strlen*4, y, color, string);
-    #endif
-}
 
 void toggle_atom(int posX, int posY)
 {
@@ -291,7 +222,7 @@ void init_game()
     }
 
     atoms_left = atom_number;
-    game_board = malloc(sizeof(int)*board_size_X*board_size_Y);
+    game_board = (int *)malloc(sizeof(int)*board_size_X*board_size_Y);
 
     for (i = 0; i < board_size_X; i++)
     {
@@ -303,16 +234,19 @@ void init_game()
 
     board_square_size = 16;
 
+	#ifdef VGA
     board_pos_x = (SCREEN_RES_X/2)-(board_size_X*board_square_size/2);
     board_pos_y = (SCREEN_RES_Y/2)-(board_size_Y*board_square_size/2);
 
-    #ifdef VGA
     load_pgm("graphix/TileMap.pgm", tilemap_location, 64, 208);
     load_pallette("graphix/TileMap.plt", 40);
     #endif
 
     #ifdef EGA
-    load_pgm("graphix/ega/tileset.pgm", tilemap_location, 64, 208);
+    board_pos_x = (get_res_x()/2)-(board_size_X*board_square_size/2);
+    board_pos_y = (get_res_y()/2)-(board_size_Y*board_square_size/2);
+
+    load_pgm("graphix/ega/tileset.pgm", (unsigned char far *)get_image_storage());
     #endif
 
     populate_board(atom_number);
@@ -330,7 +264,7 @@ void draw_tile(int posX, int posY, int tileX, int tileY)
                         );
     #endif 
     #ifdef EGA
-    transfer_tile_to_display(   tilemap_location,
+    transfer_tile_to_display(   (unsigned char far *)get_image_storage(),
                                 board_pos_x + posX*16, board_pos_y + posY*16,
                                 16*tileX, 16*tileY, 
                                 16, 16);
@@ -344,30 +278,63 @@ void victory_screen()
 
     while(choosing)
     {
+    	#ifdef VGA
         fill_rectangle(SCREEN_RES_X/2-124, SCREEN_RES_X/2+124, SCREEN_RES_Y/2-24, SCREEN_RES_Y/2+32, COLOR_PURPLE);
         fill_rectangle(SCREEN_RES_X/2-120, SCREEN_RES_X/2+120, SCREEN_RES_Y/2-20, SCREEN_RES_Y/2+28, COLOR_BLACK);
         print_string_centralized(SCREEN_RES_Y/2-15, COLOR_GREEN_1, "CONGRATULATIONS, YOU WIN!", 25, 0);
         print_string_centralized(SCREEN_RES_Y/2-5,  COLOR_TEXT, "Do you want to play again?", 26, 0);
-        
+        #endif
+        #ifdef EGA
+        draw_rectangle(get_res_x()/2-124, get_res_y()/2-24, get_res_x()/2+124, get_res_y()/2+32, COLOR_MAGENTA);
+        draw_rectangle(get_res_x()/2-120, get_res_y()/2-20, get_res_x()/2+120, get_res_y()/2+28, COLOR_BLACK);
+        draw_string_centralized(get_res_y()/2-15, COLOR_GREEN, "CONGRATULATIONS, YOU WIN!", 25, 0);
+        draw_string_centralized(get_res_y()/2-5,  COLOR_TEXT, "Do you want to play again?", 26, 0);
+        #endif
+
+       
         if(selected == 0)
         {
+         	#ifdef VGA
             print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_RED, "HELL YES!", 9, 0);   
+        	#endif
+        	#ifdef EGA
+        	draw_string_centralized(get_res_y()/2+5,  COLOR_RED, "HELL YES!", 9); 
+        	#endif
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_TEXT, "Yes.", 4, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(get_res_y()/2+5,  COLOR_TEXT, "Yes.", 4);
+            #endif
         }
 
         if(selected == 1)
         {
-            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_RED, "I got better things to do.", 26, 0);   
+        	#ifdef VGA
+            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_RED, "I got better things to do.", 26, 0); 
+            #endif
+            #ifdef EGA  
+            draw_string_centralized(get_res_y()/2+15, COLOR_RED, "I got better things to do.", 26); 
+            #endif
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(SCREEN_RES_Y/2+15, COLOR_TEXT, "No.", 3, 0);  
+            #endif
+            #ifdef EGA
+           	draw_string_centralized(get_res_y()/2+15, COLOR_TEXT, "No.", 3);  
+            #endif
         }
-
+        #ifdef VGA
         flip_front_page();
+		#endif
+        #ifdef EGA
+        page_flip();
+        #endif
 
         if(Get_Key_Once(MAKE_UP))
         {
@@ -415,29 +382,61 @@ void show_quit()
 
     while(choosing)
     {
+    	#ifdef VGA
         fill_rectangle(SCREEN_RES_X/2-134, SCREEN_RES_X/2+134, SCREEN_RES_Y/2-24, SCREEN_RES_Y/2+32, COLOR_RED);
         fill_rectangle(SCREEN_RES_X/2-130, SCREEN_RES_X/2+130, SCREEN_RES_Y/2-20, SCREEN_RES_Y/2+28, COLOR_BLACK);
         print_string_centralized(SCREEN_RES_Y/2-15, COLOR_GREEN_1, "Are you sure you want to leave?", 31, 0);
+        #endif
+        #ifdef EGA
+        draw_rectangle(get_res_x()/2-134, get_res_y()/2-24, get_res_x()/2+134, get_res_y()/2+32, COLOR_RED);
+        draw_rectangle(get_res_x()/2-130, get_res_y()/2-20, get_res_x()/2+130, get_res_y()/2+28, COLOR_BLACK);
+        draw_string_centralized(get_res_y()/2-15, COLOR_GREEN, "Are you sure you want to leave?", 31);
+        #endif
 
         if(selected == 0)
         {
+        	#ifdef VGA
             print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_RED, "YES, TAKE ME OUT OF HERE!", 25, 0);   
+            #endif
+            #ifdef EGA
+           	draw_string_centralized(get_res_y()/2+5,  COLOR_RED, "YES, TAKE ME OUT OF HERE!", 25);
+            #endif   
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(SCREEN_RES_Y/2+5,  COLOR_TEXT, "Yes.", 4, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(get_res_y()/2+5,  COLOR_TEXT, "Yes.", 4);
+            #endif   
         }
 
         if(selected == 1)
         {
-            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_RED, "NAH, I'M HAVING FUN!", 20, 0);   
+        	#ifdef VGA
+            print_string_centralized(SCREEN_RES_Y/2+15, COLOR_RED, "NAH, I'M HAVING FUN!", 20, 0);  
+            #endif 
+            #ifdef EGA
+            draw_string_centralized(get_res_y()/2+15, COLOR_RED, "NAH, I'M HAVING FUN!", 20);  
+            #endif 
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(SCREEN_RES_Y/2+15, COLOR_TEXT, "No.", 3, 0);  
+            #endif
+            #ifdef EGA
+            draw_string_centralized(get_res_y()/2+15, COLOR_TEXT, "No.", 3);  
+            #endif
         }
 
+        #ifdef VGA
         flip_front_page();
+        #endif
+        #ifdef EGA
+        page_flip();
+        #endif
 
         if(Get_Key_Once(MAKE_UP))
         {
@@ -481,17 +480,33 @@ void show_quit()
 
 void help()
 {
+	#ifdef VGA
     fill_screen(0);
 
     load_pgm("graphix/help.pgm", titlescreen_location, 320, 240);
     load_pallette("graphix/help.plt", 175);
 
     flip_front_page();
+    #endif
+
+    #ifdef EGA
+    fill_screen(0);
+    load_pgm_directly("graphix/help.pgm", get_drawbuffer());
+
+    page_flip();
+    #endif
+
     Sleep_Key();
     Keyboard_Disable_Till_Up_Event();
 
+    #ifdef VGA
     load_pgm("graphix/menu.pgm", tilemap_location, 320, 240);
     load_pallette("graphix/menu.plt", 11);
+    #endif
+
+    #ifdef EGA
+    load_pgm_directly("graphix/menu.pgm", get_drawbuffer());
+    #endif
 }
 
 void check_win()
@@ -518,9 +533,13 @@ void check_win()
 
 void init_system()
 {
+	#ifdef VGA
     int i = 0;
+    #endif
 
     Keyboard_Install_Driver();
+
+    #ifdef VGA
     set_graphics_mode(GRAPHICS_MODEX);
 
     for(i = 0; i < 256; i++)
@@ -532,11 +551,29 @@ void init_system()
     flip_front_page();
     fill_screen(0);
     flip_front_page();
+    #endif
+
+    #ifdef EGA
+    set_ega_mode(EGA_GRAPHICS_MODE);
+
+    load_font("graphix/EGA/font.pgm", font_location);
+
+    fill_screen(0);
+    page_flip();
+    fill_screen(0);
+    page_flip();
+    #endif
 }
 
 void kill_game()
 {
+	#ifdef VGA
     set_graphics_mode(TEXT_MODE);
+    #endif 
+    #ifdef EGA
+    set_ega_mode(EGA_TEXT_MODE);
+    #endif
+
     Keyboard_Restore_Driver();
 
     free(game_board);
@@ -744,6 +781,7 @@ void draw_foreground()
 
     int x, y;
 
+    #ifdef VGA
     copy_vmem_to_dbuffer(   tilemap_location, 
                             266, 
                             216, 
@@ -755,6 +793,20 @@ void draw_foreground()
 
     print_string(282, 220, COLOR_RED, ":", 0);
     print_string(290, 220, COLOR_RED,(char*) itoa(atoms_left, char_buffer, 10), 0);
+    #endif
+
+    #ifdef EGA
+    transfer_tile_to_display(   (unsigned char far *)get_image_storage(), 
+                            	266, 
+                           		216, 
+                          		32,
+                            	0,
+                            	16,
+                            	16);
+
+    draw_string(282, 220, COLOR_RED, ":");
+   	draw_int(290, 220, COLOR_RED, atoms_left);
+    #endif
 
     if(detector_hit)
     {
@@ -994,7 +1046,12 @@ void draw_foreground()
 
     draw_tile(cursor_pos_x, cursor_pos_y, 1, 0);
 
+    #ifdef VGA
     flip_front_page();
+    #endif
+    #ifdef EGA
+    page_flip();
+    #endif
 }
 
 void laser(int posX, int posY, int direction)
@@ -1008,9 +1065,6 @@ void laser(int posX, int posY, int direction)
 
     while(going)
     {
-
-        set_pixel(currentX+10, currentY+10,60);
-        
         reflection_direction = check_collision(currentX, currentY, direction);
         
         if( reflection_direction != -1 )
@@ -1295,8 +1349,13 @@ void splash_screen()
             if(frame_show < 0)
             {
                 frame_show += 1;
-                load_pgm("graphix/ttloff.pgm", titlescreen_location, 320, 240);
+                #ifdef VGA
+                load_pgm("graphix/ttloff.pgm", get_draw_buffer(), 320, 240);
                 load_pallette("graphix/ttloff.plt", 5);
+                #endif
+                #ifdef EGA
+                load_pgm_directly("graphix/ega/ttloff.pgm", get_drawbuffer());
+                #endif
             }
         }
         else if(anim_counter < frame_1) 
@@ -1304,8 +1363,13 @@ void splash_screen()
             if(frame_show < 1)
             {
                 frame_show +=1;
-                load_pgm("graphix/ttlon.pgm", titlescreen_location, 320, 240);
+                #ifdef VGA
+                load_pgm("graphix/ttlon.pgm", get_draw_buffer(), 320, 240);
                 load_pallette("graphix/ttlon.plt", 11);
+                #endif
+                #ifdef EGA
+                load_pgm_directly("graphix/ega/ttlon.pgm", get_drawbuffer());
+                #endif
             }
         }
         else if(anim_counter < frame_2)
@@ -1313,8 +1377,13 @@ void splash_screen()
             if(frame_show < 2)
             {
                 frame_show += 1;
-                load_pgm("graphix/ttlon2.pgm", titlescreen_location, 320, 240);
+                #ifdef VGA
+                load_pgm("graphix/ttlon2.pgm", get_draw_buffer(), 320, 240);
                 load_pallette("graphix/ttlon2.plt", 14);
+                #endif
+                #ifdef EGA
+                load_pgm_directly("graphix/ega/ttlon2.pgm", get_drawbuffer());
+                #endif
             }
         }
         else if(anim_counter < frame_3)
@@ -1322,8 +1391,13 @@ void splash_screen()
             if(frame_show < 3)
             {
                 frame_show += 1;
-                load_pgm("graphix/ttlon.pgm", titlescreen_location, 320, 240);
+                #ifdef VGA
+                load_pgm("graphix/ttlon.pgm", get_draw_buffer(), 320, 240);
                 load_pallette("graphix/ttlon.plt", 11);
+                #endif
+                #ifdef EGA
+                load_pgm_directly("graphix/ega/ttlon.pgm", get_drawbuffer());
+                #endif
             }
         }
         else
@@ -1331,7 +1405,12 @@ void splash_screen()
             anim_playing = 0;
         }
 
+        #ifdef VGA
         flip_front_page();
+        #endif
+        #ifdef EGA
+        page_flip();
+        #endif
 
         if(Get_Any_Key())
         {
@@ -1340,13 +1419,19 @@ void splash_screen()
     }
 
     fill_screen(0);
+    #ifdef VGA
     flip_front_page();
+    #endif
+    #ifdef EGA
+    page_flip();
+    #endif
 }
 
 void credits()
 {
     fill_screen(0);
 
+    #ifdef VGA
     load_pgm("graphix/handsome.pgm", tilemap_location, 100, 100);
     load_pallette("graphix/handsome.plt", 143);
 
@@ -1373,16 +1458,54 @@ void credits()
     print_string_centralized(230, COLOR_RED, "Press any key to return to the menu", 35, 0);
 
     flip_front_page();
+    #endif
+    #ifdef EGA
+	load_pgm("graphix/EGA/handsome.pgm", (unsigned char far *)get_image_storage());
+
+	draw_string_centralized(30, COLOR_TEXT, "This fine piece of software was made", 36);
+    draw_string_centralized(40, COLOR_TEXT, "possible by the following individuals:", 38);
+
+   	transfer_tile_to_display(  	(unsigned char far *)get_image_storage(), 
+                            	get_res_x()/3-64-10, 
+                            	get_res_y()/2-64, 
+                            	0, 
+                            	0,
+                            	128,
+                            	128);
+
+    draw_string(get_res_x()/3-64-26, 175, COLOR_GREEN, "Affonso Amendola");
+    draw_string(get_res_x()/3-64-26, 185, COLOR_TEXT, " Handsome Devil ");
+    draw_string(get_res_x()/3-64-26, 195, COLOR_TEXT, " Programmer/Art ");
+
+    draw_string(get_res_x()*2/3-64+26, 175, COLOR_GREEN, "Rafael  Flauzino");
+    draw_string(get_res_x()*2/3-64+26, 185, COLOR_TEXT, " Bearded Master ");
+    draw_string(get_res_x()*2/3-64+26, 195, COLOR_TEXT, "  Sound/ Music  ");
+
+    draw_string_centralized(190, COLOR_RED, "Press any key to return to the menu", 35);
+
+    page_flip();
+    #endif
 
     Sleep_Key();
 
+    #ifdef VGA
     fill_screen(0);
     flip_front_page();
 
     load_pgm("graphix/menu.pgm", tilemap_location, 320, 240);
     load_pallette("graphix/menu.plt", 11);
 
-    flip_front_page();
+    flip_front_page();	
+    #endif
+
+    #ifdef EGA
+    fill_screen(0);
+    page_flip();
+
+    load_pgm("graphix/EGA/menu.pgm", (unsigned char far *)get_image_storage());
+
+    page_flip();	
+    #endif
 
     Keyboard_Disable_Till_Up_Event();
 }
@@ -1393,82 +1516,168 @@ void main_menu()
 
     char input;
 
+    #ifdef VGA
     load_pallette("graphix/menu.plt", 11);
     load_pgm("graphix/menu.pgm", tilemap_location, 320, 240);
+    #endif
+
+    #ifdef EGA
+    load_pgm("graphix/EGA/menu.pgm", (unsigned char far *)get_image_storage());
+    #endif
 
     while(game_running)
     {
         fill_screen(0);
 
+        #ifdef VGA
         copy_vmem_to_dbuffer_latched (  tilemap_location,
                                         80*240,
                                         0);
+        #endif
+        #ifdef EGA
+        transfer_mem_to_dest( (unsigned char far *)get_image_storage(), get_drawbuffer(), 4, 40*200);
+        #endif
 
         if(cursor_position == 0)
         {
+        	#ifdef VGA
             print_string_centralized(120, COLOR_RED, "NEW GAME", 8, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(120, COLOR_RED, "NEW GAME", 8);
+            #endif
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(120, COLOR_TEXT, "NEW GAME", 8, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(120, COLOR_TEXT, "NEW GAME", 8);
+            #endif
         }
 
         if(cursor_position == 1)
         {
+        	#ifdef VGA
             print_string_centralized(140, COLOR_RED, "DIFFICULTY", 10, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(140, COLOR_RED, "DIFFICULTY", 10);
+            #endif
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(140, COLOR_TEXT, "DIFFICULTY", 10, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(140, COLOR_TEXT, "DIFFICULTY", 10);
+            #endif
         }
 
         if (current_difficulty == 0)
         {
+        	#ifdef VGA
             print_string_centralized(150, COLOR_LIGHT_GREEN, "EASY", 4, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(150, COLOR_LIGHT_GREEN, "EASY", 4);
+            #endif
         }
         else if (current_difficulty == 1)
         {
+        	#ifdef VGA
             print_string_centralized(150, COLOR_LIGHT_GREEN, "MEDIUM", 6, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(150, COLOR_LIGHT_GREEN, "MEDIUM", 6);
+            #endif
         }   
         else if (current_difficulty == 2)
         {
+        	#ifdef VGA
             print_string_centralized(150, COLOR_LIGHT_GREEN, "HARD", 4, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(150, COLOR_LIGHT_GREEN, "HARD", 4);
+            #endif
         }
         else if (current_difficulty == 3)
         {
+        	#ifdef VGA
             print_string_centralized(150, COLOR_LIGHT_GREEN, "IMPOSSIBLE", 10, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(150, COLOR_LIGHT_GREEN, "IMPOSSIBLE", 10);
+            #endif
         }
 
         if(cursor_position == 2)
         {
+        	#ifdef VGA
             print_string_centralized(170, COLOR_RED, "HOW TO PLAY", 11, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(170, COLOR_RED, "HOW TO PLAY", 11);
+            #endif
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(170, COLOR_TEXT, "HOW TO PLAY", 11, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(170, COLOR_TEXT, "HOW TO PLAY", 11);
+            #endif
         }
 
         if(cursor_position == 3)
         {
+        	#ifdef VGA
             print_string_centralized(180, COLOR_RED, "CREDITS", 7, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(180, COLOR_RED, "CREDITS", 7);
+            #endif
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(180, COLOR_TEXT, "CREDITS", 7, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(180, COLOR_TEXT, "CREDITS", 7);
+            #endif
         }
 
         if(cursor_position == 4)
         {
+        	#ifdef VGA
             print_string_centralized(200, COLOR_RED, "QUIT", 4, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(200, COLOR_RED, "QUIT", 4);
+            #endif
         }
         else
         {
+        	#ifdef VGA
             print_string_centralized(200, COLOR_TEXT, "QUIT", 4, 0);
+            #endif
+            #ifdef EGA
+            draw_string_centralized(200, COLOR_TEXT, "QUIT", 4);
+            #endif
         }
 
+        #ifdef VGA
         print_string_centralized(230, COLOR_ORANGE, "By Affonso Amendola, 2019", 24, 0);
-
         flip_front_page();
+        #endif 
+        #ifdef EGA
+       	draw_string_centralized(230, COLOR_LIGHT_RED, "By Affonso Amendola, 2019", 24);
+        page_flip();
+        #endif
 
         if(Get_Key_Once(MAKE_SPACE) || Get_Key_Once(MAKE_ENTER))
         {
@@ -1562,11 +1771,19 @@ void print_order_info()
 
 int main()
 {
-    init_system();
-    
-    splash_screen();
+	set_ega_mode(EGA_GRAPHICS_MODE);
+	install_vblank_handler();
 
-    main_menu();
+	while(!kbhit())
+	{
+		printf("%d\n", get_res_x());
+	}
+
+	/*init_system();
+
+	splash_screen();
+    
+   	main_menu();
     
     init_game();
 
@@ -1574,8 +1791,8 @@ int main()
     {
         game_loop();
     }
-
-    kill_game();
+	
+	kill_game();
     print_order_info();
-    return 0;
+    return 0;*/
 }

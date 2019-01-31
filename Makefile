@@ -3,28 +3,37 @@
 #	Fofonso's Atoms VGA								#
 #---------------------------------------------------#
 
-GAMENAME = ATOMSVGA
+GAMENAME = ATOMS
 CC = tcc
 RM = rm -f
 
 INCLUDE = include;D:\tc\include
-LIB = D:\tc\lib
+LIB = D:\tc\lib;lib
 CCFLAGS = 
 
-all: $(GAMENAME).exe
+all: ega
+all: vga
+	
+ega:
+	$(CC) "-I$(INCLUDE) -L$(LIB) -DEGA -e$(GAMENAME)EGA -l $(CCFLAGS)"  *.c libega.lib
+	cp $(GAMENAME)EGA.EXE ./release/
+	cp -r ./graphix ./release/
 
-$(GAMENAME).exe:
-	$(CC) "-I$(INCLUDE) -L$(LIB) -e$(GAMENAME) $(CCFLAGS)"  *.c 
-	cp $(GAMENAME).EXE ./release/
+vga:
+	$(CC) "-I$(INCLUDE) -L$(LIB) -DVGA -e$(GAMENAME)VGA -l $(CCFLAGS)"  *.c libVGA87.lib
+	cp $(GAMENAME)VGA.EXE ./release/
 	cp -r ./graphix ./release/
 	
-run:
-	dosbox -conf ~/.dosbox/tcc.conf -c "$(GAMENAME)"
+runega:
+	dosbox -conf ~/.dosbox/tcc.conf -c "$(GAMENAME)EGA"
+
+runvga:
+	dosbox -conf ~/.dosbox/tcc.conf -c "$(GAMENAME)VGA"
 
 clean:
-	$(RM) *.OBJ *.EXE *.LOG *.BAT
+	$(RM) *.OBJ *.EXE *.LOG *.BAT *.MAP
 
 cleanall:
-	$(RM) *.OBJ *.EXE *.LOG *.BAT
+	$(RM) *.OBJ *.EXE *.LOG *.BAT *.MAP
 	$(RM) release/$(GAMENAME).EXE
 	$(RM) -r release/graphix
