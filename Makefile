@@ -14,14 +14,10 @@ CCFLAGS =
 all: vga
 	
 ega:
-	$(CC) "-I$(INCLUDE) -L$(LIB) -DEGA -e$(GAMENAME)EGA -l $(CCFLAGS)"  *.c libega.lib
-	cp $(GAMENAME)EGA.EXE ./release/
-	cp -r ./graphix ./release/
+	$(CC) "-I$(INCLUDE) -L$(LIB) -DEGA -e$(GAMENAME)EGA -l $(CCFLAGS)"  *.c fflibega.lib
 
 vga:
-	$(CC) "-I$(INCLUDE) -L$(LIB) -DVGA -e$(GAMENAME)VGA -l $(CCFLAGS)"  *.c libVGA87.lib
-	cp $(GAMENAME)VGA.EXE ./release/
-	cp -r ./graphix ./release/
+	$(CC) "-I$(INCLUDE) -L$(LIB) -DVGA -e$(GAMENAME)VGA -l $(CCFLAGS)"  *.c fflibvga.lib
 	
 runega:
 	dosbox -conf ~/.dosbox/tcc.conf -c "$(GAMENAME)EGA"
@@ -31,8 +27,3 @@ runvga:
 
 clean:
 	$(RM) *.OBJ *.EXE *.LOG *.BAT *.MAP
-
-cleanall:
-	$(RM) *.OBJ *.EXE *.LOG *.BAT *.MAP
-	$(RM) release/$(GAMENAME).EXE
-	$(RM) -r release/graphix
