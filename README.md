@@ -1,6 +1,6 @@
 # Fofonso's Atoms VGA
 
-A clone of a cool 90s little puzzle game I found on a shareware disk for Windows 3.11 called Atoms, made by Mike McNamee.
+A clone of a cool little puzzle game I found on a shareware disk for Windows 3.11 called Atoms that was originally made by Mike McNamee in the 90s.
 
 My version runs natively in MS-DOS 6.22 (Should run fine on earlier versions as long as you use a VGA board), that does mean you'll have to use DosBox or other emulators to play it, I dont think I'll make a modern OS version, because I dont really care enough :P.
 
