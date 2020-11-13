@@ -1,0 +1,1 @@
+tcc -Iinclude;D:\SOFT\TC\INCLUDE -LD:\SOFT\TC\LIB;LIB -DVGA -eATOMSVGA -l *.c fflibvga.lib

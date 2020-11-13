@@ -58,6 +58,7 @@
 
 typedef int bool;
 
+bool debug_mode = 0;
 bool game_running = 1;
 
 int * game_board;
@@ -170,12 +171,11 @@ void populate_board(int atomNumber)
 {
     int i;
 
-    bool searching = true;
-
     int x, y;
 
     for(i=0; i<atomNumber; i++)
     {
+        bool searching = true;
         do
         {
             x = rand()%(board_size_X-1);
@@ -1042,6 +1042,11 @@ void draw_foreground()
             {
                 draw_tile(x, y, 3, 0);
             }
+
+            if(has_atom(x, y) && debug_mode == true)
+            {
+                set_pixel(board_pos_x + 8 + x*16, board_pos_y + 8 + y*16, COLOR_PURPLE);
+            }
         }
     }
 
@@ -1219,6 +1224,11 @@ void handle_input()
 
     if(Get_Any_Key())
     {    
+        if(Get_Key(MAKE_6) && Get_Key(MAKE_9))
+        {
+            debug_mode = !debug_mode;
+        }
+
         if(Get_Key_Once(MAKE_UP))
         {
             if(cursor_pos_x >= -1 && cursor_pos_x <= board_size_X)
@@ -1437,10 +1447,10 @@ void credits()
     load_pallette("graphix/handsome.plt", 143);
 
     print_string_centralized(30, COLOR_TEXT, "This fine piece of software was made", 36, 0);
-    print_string_centralized(40, COLOR_TEXT, "possible by the following individuals:", 38, 0);
+    print_string_centralized(40, COLOR_TEXT, "possible by the following bastard:", 38, 0);
 
     copy_vmem_to_dbuffer(   tilemap_location, 
-                            SCREEN_RES_X/3-50-26, 
+                            SCREEN_RES_X/3, 
                             SCREEN_RES_Y/2-50, 
                             0, 
                             99,
@@ -1448,13 +1458,13 @@ void credits()
                             99,
                             100);
 
-    print_string(SCREEN_RES_X/3-64-26, 175, COLOR_GREEN_1, "Affonso Amendola", 0);
-    print_string(SCREEN_RES_X/3-64-26, 185, COLOR_TEXT, " Handsome Devil ", 0);
-    print_string(SCREEN_RES_X/3-64-26, 195, COLOR_TEXT, " Programmer/Art ", 0);
+    print_string(SCREEN_RES_X/3-13, 175, COLOR_GREEN_1, "Affonso Amendola", 0);
+    print_string(SCREEN_RES_X/3-13, 185, COLOR_TEXT, " Handsome Devil ", 0);
+    print_string(SCREEN_RES_X/3-13, 195, COLOR_TEXT, " Programmer/Art ", 0);
 
-    print_string(SCREEN_RES_X*2/3-64+26, 175, COLOR_GREEN_1, "Rafael  Flauzino", 0);
-    print_string(SCREEN_RES_X*2/3-64+26, 185, COLOR_TEXT, " Bearded Master ", 0);
-    print_string(SCREEN_RES_X*2/3-64+26, 195, COLOR_TEXT, "  Sound/ Music  ", 0);
+  //  print_string(SCREEN_RES_X*2/3-64+26, 175, COLOR_GREEN_1, "Rafael  Flauzino", 0);
+   // print_string(SCREEN_RES_X*2/3-64+26, 185, COLOR_TEXT, " Bearded Master ", 0);
+   // print_string(SCREEN_RES_X*2/3-64+26, 195, COLOR_TEXT, "  Sound/ Music  ", 0);
 
     print_string_centralized(230, COLOR_RED, "Press any key to return to the menu", 35, 0);
 

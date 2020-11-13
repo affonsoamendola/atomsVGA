@@ -1,0 +1,22 @@
+keyb.c(2): Error! E1055: Unable to open 'bios.h'
+keyb.c(3): Error! E1055: Unable to open 'dos.h'
+keyb.c(4): Error! E1055: Unable to open 'memory.h'
+keyb.c(5): Error! E1055: Unable to open 'math.h'
+keyb.c(6): Error! E1055: Unable to open 'time.h'
+keyb.c(8): Error! E1055: Unable to open 'keyb.h'
+keyb.c(23): Warning! W131: No prototype found for function 'Get_Any_Key'
+keyb.c(30): Error! E1011: Symbol 'clock_t' has not been declared
+keyb.c(30): Error! E1009: Expecting ';' but found 'time'
+keyb.c(30): Error! E1011: Symbol 'time' has not been declared
+keyb.c(30): Warning! W131: No prototype found for function 'clock'
+keyb.c(31): Error! E1077: Missing '}'
+keyb.c(33): Error! E1099: Statement must be inside function. Probable cause: missing {
+keyb.c(65): Error! E1011: Symbol 'KEY_DOWN' has not been declared
+keyb.c(85): Error! E1156: Assembler error: 'Invalid instruction operands'
+keyb.c(88): Error! E1156: Assembler error: 'Invalid instruction operands'
+keyb.c(90): Error! E1156: Assembler error: 'Invalid instruction operands'
+keyb.c(92): Error! E1156: Assembler error: 'Invalid instruction operands'
+keyb.c(94): Error! E1156: Assembler error: 'Invalid instruction operands'
+keyb.c(95): Error! E1011: Symbol 'KEY_BUFFER' has not been declared
+keyb.c(99): Error! E1011: Symbol 'KEY_UP' has not been declared
+keyb.c(102): Error! E1147: Too many errors: compilation aborted
